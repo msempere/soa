@@ -68,6 +68,7 @@ S3Api(const std::string & accessKeyId,
       serviceUri(serviceUri),
       bandwidthToServiceMbps(bandwidthToServiceMbps)
 {
+    std::cerr<< "ID: " << accessKeyId << " KEY: " << accessKey <<std::endl;
 }
 
 void
@@ -350,9 +351,10 @@ signature(const RequestParams & request) const
                                         request.resource, request.subResource,
                                         request.contentType, request.contentMd5,
                                         request.date, request.headers);
-    
-    //cerr << "digest = " << digest << endl;
-    
+
+    cerr << "digest = " << digest << endl;
+
+
     return signV2(digest, accessKey);
 }
 
@@ -367,17 +369,29 @@ prepare(const RequestParams & request) const
             "the empty constructor.)");
     }
 
+    //RequestParams r
+
     SignedRequest result;
     result.params = request;
     result.bandwidthToServiceMbps = bandwidthToServiceMbps;
     result.owner = const_cast<S3Api *>(this);
 
-    if (request.resource.find("//") != string::npos)
-        throw ML::Exception("attempt to perform s3 request with double slash: "
-                            + request.resource);
+    //std::cerr<< "Bucket: " <<request.bucket << std::endl;
+    //std::cerr<< "Resource: "<<request.resource <<std::endl;
+    //std::cerr<< "SubResource: "<<request.subResource <<std::endl;
+
+
+        //std::string rr = "af-bidder-test2";
+        //std::string su = "s3-eu-west-1.amazonaws.com";
+
+    //std::string resource = "af-bidder-test2/";
+
+//    if (request.resource.find("//") != string::npos)
+//        throw ML::Exception("attempt to perform s3 request with double slash: "
+//                            + request.resource);
 
     if (request.bucket.empty()) {
-        result.uri = protocol + "://" + serviceUri
+        result.uri = protocol + "://" + serviceUri + "/"
             + request.resource
             + (request.subResource != "" ? "?" + request.subResource : "");
     }
@@ -387,6 +401,8 @@ prepare(const RequestParams & request) const
             + (request.subResource != "" ? "?" + request.subResource : "");
     }
 
+    //result.uri = "http://" + request.bucket + "." + serviceUri;
+
     for (unsigned i = 0;  i < request.queryParams.size();  ++i) {
         if (i == 0 && request.subResource == "")
             result.uri += "?";
@@ -395,8 +411,12 @@ prepare(const RequestParams & request) const
             + "=" + uriEncode(request.queryParams[i].second);
     }
 
+    std::cerr<<"URI: "<< result.uri << std::endl;
+
     string sig = signature(request);
     result.auth = "AWS " + accessKeyId + ":" + sig;
+
+    //std::cerr<< "Auth: " << result.auth << std::endl;
 
     //cerr << "result.uri = " << result.uri << endl;
     //cerr << "result.auth = " << result.auth << endl;
@@ -544,7 +564,7 @@ S3Api::isMultiPartUploadInProgress(
     vector<MultiPartUploadPart> parts;
 
 
-    for (; upload; upload = upload->NextSiblingElement("Upload")) 
+    for (; upload; upload = upload->NextSiblingElement("Upload"))
     {
         XMLHandle uploadHandle(upload);
 
@@ -567,6 +587,9 @@ obtainMultiPartUpload(const std::string & bucket,
                       const std::string & resource,
                       const ObjectMetadata & metadata) const
 {
+
+
+
     string escapedResource = escapeResource(resource);
     // Contains the resource without the leading slash
     string outputPrefix(resource, 1);
@@ -602,7 +625,7 @@ obtainMultiPartUpload(const std::string & bucket,
 
         if (key != outputPrefix)
             continue;
-        
+
         // Already an upload in progress
         string uploadId = extract<string>(upload, "UploadId");
 
@@ -1010,7 +1033,7 @@ forEachObject(const std::string & bucket,
     bool firstIter = true;
     do {
         //cerr << "Starting at " << marker << endl;
-        
+
         StrPairVector queryParams;
         if (prefix != "")
             queryParams.push_back({"prefix", prefix});
@@ -1120,6 +1143,8 @@ S3Api::
 getObjectInfo(const std::string & bucket,
               const std::string & object) const
 {
+    //std::cerr<<"GETOBJECTINFO"<<std::endl;
+
     StrPairVector queryParams;
     queryParams.push_back({"prefix", object});
 
@@ -1376,7 +1401,7 @@ struct StreamingDownloadSource {
             numThreads = 3;
         if (impl->info.size > 256 * 1024 * 1024)
             numThreads = 5;
-        
+
         impl->start(numThreads);
     }
 
@@ -1943,6 +1968,8 @@ parseUri(const std::string & uri)
     string bucket(pathPart, 0, pos);
     string object(pathPart, pos + 1);
 
+    std::cerr<< "PARSER URI BUCKET: " << bucket <<std::endl;
+    std::cerr<< "PARSER URI OBJECT: " << object <<std::endl;
     return make_pair(bucket, object);
 }
 
@@ -1967,6 +1994,7 @@ initS3(const std::string & accessKeyId,
        const std::string & accessKey,
        const std::string & uriPrefix)
 {
+    std::cerr<< "ID: " << accessKeyId << " KEY: " << accessKey << std::endl;
     s3.init(accessKeyId, accessKey);
     this->s3UriPrefix = uriPrefix;
 }
@@ -2120,6 +2148,8 @@ void registerS3Bucket(const std::string & bucketName,
                       const std::string & protocol,
                       const std::string & serviceUri)
 {
+    std::cerr<<"REGISTERS3BUCKET"<<std::endl<<"\t"<<bucketName<<std::endl<<"\t"<<accessKeyId<<std::endl<<"\t"<<accessKey<<std::endl<<"\t"<<protocol<<std::endl<<"\t"<<serviceUri<<std::endl;
+
     std::unique_lock<std::recursive_mutex> guard(s3BucketsLock);
 
     auto it = s3Buckets.find(bucketName);
@@ -2143,7 +2173,10 @@ void registerS3Bucket(const std::string & bucketName,
     info.api = std::make_shared<S3Api>(accessKeyId, accessKey,
                                        bandwidthToServiceMbps,
                                        protocol, serviceUri);
-    info.api->getEscaped("", "/" + bucketName + "/", 8192);//throws if !accessible
+
+    std::string b = bucketName;
+    b.erase(0,5);
+    info.api->getEscaped("", "/" + b + "/", 8192);//throws if !accessible
     s3Buckets[bucketName] = info;
 }
 
@@ -2171,7 +2204,7 @@ struct RegisterS3Handler {
             return make_pair(api->streamingUpload("s3://" + resource)
                              .release(),
                              true);
-        }
+            }
         else throw ML::Exception("no way to create s3 handler for non in/out");
     }
 
@@ -2247,7 +2280,7 @@ void registerDefaultBuckets()
                      << line << endl;
                 continue;
             }
-                
+
             fields.resize(7);
 
 
@@ -2258,7 +2291,7 @@ void registerDefaultBuckets()
                      << line << endl;
                 continue;
             }
-                
+
             string keyId = fields[2];
             string key = fields[3];
             string bandwidth = fields[4];

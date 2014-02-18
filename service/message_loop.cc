@@ -89,7 +89,7 @@ start(std::function<void ()> onStop)
 
     ++numThreadsCreated;
 }
-    
+
 void
 MessageLoop::
 startSync()
@@ -101,7 +101,7 @@ startSync()
 
     runWorkerThread();
 }
-    
+
 void
 MessageLoop::
 shutdown()
@@ -132,6 +132,34 @@ addSource(const std::string & name,
 {
     addSourceImpl(name, source, priority);
 }
+
+void
+MessageLoop::
+printSources() const{
+    cerr<<"[MESSAGELOOP][SOURCES]"<<std::endl;
+    for(auto s: sources)
+        cerr<<"\t\t"<<s.name<<std::endl;
+}
+
+std::shared_ptr<std::vector<std::string>>
+MessageLoop::
+getSourceNames() const {
+    std::vector<std::string> v;
+    for(SourceEntry s: sources)
+        v.push_back(s.name);
+    return std::make_shared<std::vector<std::string>>(v);
+}
+
+std::shared_ptr<MessageLoop::SourceEntry>
+MessageLoop::
+getEntry(std::string name) const {
+
+    for(SourceEntry s: sources)
+        if(s.name == name)
+            return std::make_shared<MessageLoop::SourceEntry>(s);
+    return NULL;
+}
+
 
 void
 MessageLoop::
@@ -213,7 +241,10 @@ processAddSource(const SourceEntry& entry)
         if (parent_) parent_->checkNeedsPoll();
     }
 
-    if (debug_) entry.source->debug(true);
+    if (debug_) {
+        entry.source->debug(true);
+        printSources();
+    }
     sources.push_back(entry);
 
     entry.source->connectionState_ = AsyncEventSource::CONNECTED;
@@ -292,7 +323,7 @@ runWorkerThread()
         while (more) {
             more = processOne();
         }
-        
+
         Date end = Date::now();
 
         double elapsed = end.secondsSince(start);
@@ -324,8 +355,8 @@ handleEpollEvent(epoll_event & event)
     if (debug) {
         cerr << "handleEvent" << endl;
         int mask = event.events;
-                
-        cerr << "events " 
+
+        cerr << "events "
              << (mask & EPOLLIN ? "I" : "")
              << (mask & EPOLLOUT ? "O" : "")
              << (mask & EPOLLPRI ? "P" : "")
@@ -333,11 +364,11 @@ handleEpollEvent(epoll_event & event)
              << (mask & EPOLLHUP ? "H" : "")
              << (mask & EPOLLRDHUP ? "R" : "")
              << endl;
-    }            
-    
+    }
+
     AsyncEventSource * source
         = reinterpret_cast<AsyncEventSource *>(event.data.ptr);
-    
+
     //cerr << "source = " << source << " of type "
     //     << ML::type_name(*source) << endl;
 

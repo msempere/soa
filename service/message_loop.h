@@ -26,7 +26,7 @@ namespace Datacratic {
 /*****************************************************************************/
 
 struct MessageLoop : public Epoller {
-    
+
     MessageLoop(int numThreads = 1, double maxAddedLatency = 0.0005);
     ~MessageLoop();
 
@@ -35,10 +35,31 @@ struct MessageLoop : public Epoller {
     void start(std::function<void ()> onStop = std::function<void ()>());
 
     void startSync();
-    
-    //void sleepUntilIdle();
+
+    //void sleepUntilIdle();i
+    //
+    //
+    struct SourceEntry
+    {
+        SourceEntry(
+                const std::string& name,
+                std::shared_ptr<AsyncEventSource> source,
+                int priority) :
+            name(name), source(source), priority(priority)
+        {}
+
+        std::string name;
+        std::shared_ptr<AsyncEventSource> source;
+        int priority;
+    };
+
+
+
 
     void shutdown();
+    void printSources() const;
+    //std::shared_ptr<Datacratic::MessageLoop::SourceEntry>  getSources();
+
 
     /** Add the given source of asynchronous wakeups with the given
         callback to be run when they trigger.
@@ -72,7 +93,7 @@ struct MessageLoop : public Epoller {
                      double timePeriodSeconds,
                      std::function<void (uint64_t)> toRun,
                      int priority = 0);
-    
+
     typedef std::function<void (volatile int & shutdown_,
                                 int64_t threadId)> SubordinateThreadFn;
 
@@ -102,10 +123,17 @@ struct MessageLoop : public Epoller {
     double totalSleepSeconds() const { return totalSleepTime_; }
 
     void debug(bool debugOn);
-    
+
+    std::shared_ptr<std::vector<std::string>> getSourceNames() const;
+    std::shared_ptr<MessageLoop::SourceEntry> getEntry(std::string) const;
+
+
+    std::vector<SourceEntry> sources;
+
+
 private:
     void runWorkerThread();
-    
+
     void wakeupMainThread();
 
     /** Implementation of addSource that runs without taking the lock. */
@@ -116,21 +144,6 @@ private:
     typedef ML::Spinlock Lock;
     typedef std::lock_guard<Lock> Guard;
 
-    struct SourceEntry
-    {
-        SourceEntry(
-                const std::string& name,
-                std::shared_ptr<AsyncEventSource> source,
-                int priority) :
-            name(name), source(source), priority(priority)
-        {}
-
-        std::string name;
-        std::shared_ptr<AsyncEventSource> source;
-        int priority;
-    };
-
-    std::vector<SourceEntry> sources;
 
     mutable Lock queueLock;
     std::vector<SourceEntry> addSourceQueue;
@@ -152,7 +165,7 @@ private:
     Lock threadsLock;
     int numThreadsCreated;
     boost::thread_group threads;
-    
+
     /** Global flag to shutdown. */
     volatile int shutdown_;
 
