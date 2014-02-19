@@ -124,8 +124,8 @@ struct MessageLoop : public Epoller {
 
     void debug(bool debugOn);
 
-    void removeSourceByName(std::string);
-    std::shared_ptr<MessageLoop::SourceEntry> getEntry(std::string) const;
+    void removeSourceByName(const std::string);
+    std::shared_ptr<MessageLoop::SourceEntry> getEntry(const std::string) const;
     std::vector<SourceEntry> getSources() const {return sources;}
 
 

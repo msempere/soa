@@ -133,9 +133,10 @@ addSource(const std::string & name,
     addSourceImpl(name, source, priority);
 }
 
+
 std::shared_ptr<MessageLoop::SourceEntry>
 MessageLoop::
-getEntry(std::string name) const {
+getEntry(const std::string name) const {
 
     for(SourceEntry s: getSources())
         if(s.name == name)
@@ -187,11 +188,12 @@ removeSource(AsyncEventSource * source)
 
 void
 MessageLoop::
-removeSourceByName(std::string sourceName){
+removeSourceByName(const std::string sourceName){
     auto entry = getEntry(sourceName);
     if(entry)
         removeSource(entry->source.get());
 }
+
 
 void
 MessageLoop::
