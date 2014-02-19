@@ -133,28 +133,11 @@ addSource(const std::string & name,
     addSourceImpl(name, source, priority);
 }
 
-void
-MessageLoop::
-printSources() const{
-    cerr<<"[MESSAGELOOP][SOURCES]"<<std::endl;
-    for(auto s: sources)
-        cerr<<"\t\t"<<s.name<<std::endl;
-}
-
-std::shared_ptr<std::vector<std::string>>
-MessageLoop::
-getSourceNames() const {
-    std::vector<std::string> v;
-    for(SourceEntry s: sources)
-        v.push_back(s.name);
-    return std::make_shared<std::vector<std::string>>(v);
-}
-
 std::shared_ptr<MessageLoop::SourceEntry>
 MessageLoop::
 getEntry(std::string name) const {
 
-    for(SourceEntry s: sources)
+    for(SourceEntry s: getSources())
         if(s.name == name)
             return std::make_shared<MessageLoop::SourceEntry>(s);
     return NULL;
@@ -204,6 +187,14 @@ removeSource(AsyncEventSource * source)
 
 void
 MessageLoop::
+removeSourceByName(std::string sourceName){
+    auto entry = getEntry(sourceName);
+    if(entry)
+        removeSource(entry->source.get());
+}
+
+void
+MessageLoop::
 processSourceQueue()
 {
     if (!sourceQueueFlag) return;
@@ -241,10 +232,7 @@ processAddSource(const SourceEntry& entry)
         if (parent_) parent_->checkNeedsPoll();
     }
 
-    if (debug_) {
-        entry.source->debug(true);
-        printSources();
-    }
+    if (debug_) entry.source->debug(true);
     sources.push_back(entry);
 
     entry.source->connectionState_ = AsyncEventSource::CONNECTED;

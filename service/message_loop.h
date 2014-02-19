@@ -124,14 +124,14 @@ struct MessageLoop : public Epoller {
 
     void debug(bool debugOn);
 
-    std::shared_ptr<std::vector<std::string>> getSourceNames() const;
+    void removeSourceByName(std::string);
     std::shared_ptr<MessageLoop::SourceEntry> getEntry(std::string) const;
-
-
-    std::vector<SourceEntry> sources;
+    std::vector<SourceEntry> getSources() const {return sources;}
 
 
 private:
+    std::vector<SourceEntry> sources;
+
     void runWorkerThread();
 
     void wakeupMainThread();
