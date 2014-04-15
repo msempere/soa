@@ -68,7 +68,7 @@ S3Api(const std::string & accessKeyId,
       serviceUri(serviceUri),
       bandwidthToServiceMbps(bandwidthToServiceMbps)
 {
-    std::cerr<< "ID: " << accessKeyId << " KEY: " << accessKey <<std::endl;
+    //std::cerr<< "ID: " << accessKeyId << " KEY: " << accessKey <<std::endl;
 }
 
 void
@@ -352,7 +352,7 @@ signature(const RequestParams & request) const
                                         request.contentType, request.contentMd5,
                                         request.date, request.headers);
 
-    cerr << "digest = " << digest << endl;
+    //cerr << "digest = " << digest << endl;
 
 
     return signV2(digest, accessKey);
@@ -391,7 +391,7 @@ prepare(const RequestParams & request) const
 //                            + request.resource);
 
     if (request.bucket.empty()) {
-        result.uri = protocol + "://" + serviceUri + "/"
+        result.uri = protocol + "://" + serviceUri
             + request.resource
             + (request.subResource != "" ? "?" + request.subResource : "");
     }
@@ -411,7 +411,7 @@ prepare(const RequestParams & request) const
             + "=" + uriEncode(request.queryParams[i].second);
     }
 
-    std::cerr<<"URI: "<< result.uri << std::endl;
+    //std::cerr<<"URI: "<< result.uri << std::endl;
 
     string sig = signature(request);
     result.auth = "AWS " + accessKeyId + ":" + sig;
@@ -1959,6 +1959,7 @@ std::pair<std::string, std::string>
 S3Api::
 parseUri(const std::string & uri)
 {
+    std::cerr<<"URI: "<<uri<<std::endl;
     if (uri.find("s3://") != 0)
         throw ML::Exception("wrong scheme (should start with s3://)");
     string pathPart(uri, 5);
@@ -1968,8 +1969,8 @@ parseUri(const std::string & uri)
     string bucket(pathPart, 0, pos);
     string object(pathPart, pos + 1);
 
-    std::cerr<< "PARSER URI BUCKET: " << bucket <<std::endl;
-    std::cerr<< "PARSER URI OBJECT: " << object <<std::endl;
+    //std::cerr<< "PARSER URI BUCKET: " << bucket <<std::endl;
+    //std::cerr<< "PARSER URI OBJECT: " << object <<std::endl;
     return make_pair(bucket, object);
 }
 
@@ -1994,7 +1995,7 @@ initS3(const std::string & accessKeyId,
        const std::string & accessKey,
        const std::string & uriPrefix)
 {
-    std::cerr<< "ID: " << accessKeyId << " KEY: " << accessKey << std::endl;
+    //std::cerr<< "ID: " << accessKeyId << " KEY: " << accessKey << std::endl;
     s3.init(accessKeyId, accessKey);
     this->s3UriPrefix = uriPrefix;
 }
@@ -2148,7 +2149,7 @@ void registerS3Bucket(const std::string & bucketName,
                       const std::string & protocol,
                       const std::string & serviceUri)
 {
-    std::cerr<<"REGISTERS3BUCKET"<<std::endl<<"\t"<<bucketName<<std::endl<<"\t"<<accessKeyId<<std::endl<<"\t"<<accessKey<<std::endl<<"\t"<<protocol<<std::endl<<"\t"<<serviceUri<<std::endl;
+    //std::cerr<<"REGISTERS3BUCKET"<<std::endl<<"\t"<<bucketName<<std::endl<<"\t"<<accessKeyId<<std::endl<<"\t"<<accessKey<<std::endl<<"\t"<<protocol<<std::endl<<"\t"<<serviceUri<<std::endl;
 
     std::unique_lock<std::recursive_mutex> guard(s3BucketsLock);
 
@@ -2174,9 +2175,9 @@ void registerS3Bucket(const std::string & bucketName,
                                        bandwidthToServiceMbps,
                                        protocol, serviceUri);
 
-    std::string b = bucketName;
-    b.erase(0,5);
-    info.api->getEscaped("", "/" + b + "/", 8192);//throws if !accessible
+    //std::string b = bucketName;
+    //b.erase(0,5);
+    info.api->getEscaped("", "/" + bucketName + "/", 8192);//throws if !accessible
     s3Buckets[bucketName] = info;
 }
 
